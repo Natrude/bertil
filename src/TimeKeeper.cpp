@@ -22,15 +22,17 @@ TimeKeeper::TimeKeeper(int8_t utcOffsetHours, bool useEuDst)
     : utcOffsetHours_(utcOffsetHours), useEuDst_(useEuDst) {}
 
 TimeKeeper::Status TimeKeeper::begin() {
+  // Timeouten sätts före rtc_.begin() så att även den första överföringen
+  // har en gräns. Wire.begin() nollställer den inte.
+#if defined(WIRE_HAS_TIMEOUT)
+  Wire.setWireTimeout(kWireTimeoutUs, true);
+#endif
+
   // rtc_.begin() startar Wire och kontrollerar att kretsen svarar på
   // sin I2C-adress (0x68).
   if (!rtc_.begin()) {
     return Status::NotFound;
   }
-
-#if defined(WIRE_HAS_TIMEOUT)
-  Wire.setWireTimeout(kWireTimeoutUs, true);
-#endif
 
   // 32 kHz-utgången används inte. Stäng av den för att spara ström.
   rtc_.disable32K();
