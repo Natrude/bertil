@@ -100,20 +100,22 @@ void pollClock() {
     Serial.println(F("RTC svarar igen."));
   }
 
+  // Medan servot parkerar vid uppstart eller slår manuellt väntar schemat.
+  // Klockslaget tas då när servot är ledigt, så länge det är inom fönstret.
+  if (striker.isBusy()) {
+    return;
+  }
+
   const uint8_t strikes = scheduler.poll(now);
   if (strikes == 0) {
     return;
   }
 
+  striker.request(strikes);
   printDateTime(Serial, now);
-  if (striker.request(strikes)) {
-    Serial.print(F("  slår "));
-    Serial.print(strikes);
-    Serial.println(F(" gång(er)."));
-  } else {
-    // Händer bara om ett manuellt slag pågår precis när schemat slår till.
-    Serial.println(F("  hoppade över slag, servot var upptaget."));
-  }
+  Serial.print(F("  slår "));
+  Serial.print(strikes);
+  Serial.println(F(" gång(er)."));
 }
 
 }  // namespace
@@ -132,6 +134,7 @@ void setup() {
 
   // Servot först, så att armen kommer till viloläget direkt.
   striker.begin();
+  scheduler.begin();
 
   switch (timeKeeper.begin()) {
     case TimeKeeper::Status::Ok:

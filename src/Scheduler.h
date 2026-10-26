@@ -20,6 +20,7 @@ struct StrikeTime {
  * poll() anropas regelbundet med lokal tid och returnerar antal slag
  * när ett schemalagt klockslag inträffar. Varje minut hanteras högst
  * en gång, så klockan slår inte flera gånger under samma minut.
+ * Senast slagna minut sparas i EEPROM och gäller även efter en omstart.
  */
 class Scheduler {
  public:
@@ -30,8 +31,14 @@ class Scheduler {
    */
   Scheduler(const StrikeTime* entries, size_t count);
 
+  /// Läser in senast slagna minut från EEPROM. Anropas en gång från setup().
+  void begin();
+
   /**
    * @brief Kontrollerar om ett klockslag ska slås nu.
+   *
+   * Ett returnerat klockslag räknas som slaget, så anropa bara poll()
+   * när slaget faktiskt kan startas.
    * @param local Aktuell lokal tid.
    * @return Antal slag som ska slås, eller 0.
    */
