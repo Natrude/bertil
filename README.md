@@ -1,7 +1,5 @@
 # bertil
 
-SW for Arduino Uno rev3, using after market RTC.
-
 Arduino Uno R3 som slår på en klocka med ett SG90-servo vid bestämda klockslag. Tiden hålls av en Adafruit DS3231.
 
 ## 1. Installera
