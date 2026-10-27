@@ -64,11 +64,8 @@ constexpr int8_t kUtcOffsetHours = 1;
 /// true = följ EU:s regler för sommartid (sista söndagen i mars och oktober).
 constexpr bool kUseEuDst = true;
 
-/// Hur ofta RTC:n läses av, i millisekunder.
+/// Hur ofta klockan jämförs med schemat, i millisekunder.
 constexpr uint16_t kClockPollMs = 200;
-
-/// Antal misslyckade avläsningar i rad innan RTC:n räknas som trasig.
-constexpr uint8_t kRtcFaultThreshold = 10;
 
 // ---------------------------------------------------------------------------
 // Slagschema (lokal tid)

@@ -5,13 +5,12 @@
  * Hårdvara:
  *   - Arduino Uno R4 WiFi
  *   - SG90-servo på pinne 9, matat med 5 V och gemensam jord
- *   - Adafruit DS3231 RTC på I2C (SDA = A4, SCL = A5)
  *
  * Programmet är uppbyggt av små moduler som var och en har en update()
  * som anropas från loop(). Ingen modul blockerar, så loop() varvar många
  * gånger per sekund och watchdogen kan matas hela tiden.
  *
- *   TimeKeeper   läser RTC:n och räknar om till lokal tid
+ *   TimeKeeper   håller tiden och räknar om till lokal tid
  *   Scheduler    avgör om klockan ska slå just nu
  *   BellStriker  rör servot
  *   Console      kommandon över serieporten
@@ -58,12 +57,11 @@ Console console(Serial, timeKeeper, striker, scheduler);
 
 /// Övergripande läge, visas med lysdioden.
 enum class Health : uint8_t {
-  Ok,        ///< Allt fungerar. Lysdioden blinkar lugnt.
-  RtcFault,  ///< RTC:n svarar inte. Lysdioden blinkar snabbt.
+  Ok,          ///< Allt fungerar. Lysdioden blinkar lugnt.
+  TimeNotSet,  ///< Klockan är inte ställd. Lysdioden blinkar snabbt.
 };
 
-Health health = Health::Ok;
-uint8_t consecutiveRtcFailures = 0;
+Health health = Health::TimeNotSet;
 uint32_t lastClockPollMs = 0;
 
 // ---------------------------------------------------------------------------
@@ -83,22 +81,10 @@ void pollClock() {
   DateTime now;
 
   if (!timeKeeper.readLocal(now)) {
-    // Enstaka missar kan bero på störningar. Först när många avläsningar
-    // i rad misslyckats räknas RTC:n som trasig.
-    if (consecutiveRtcFailures < config::kRtcFaultThreshold) {
-      ++consecutiveRtcFailures;
-    } else if (health != Health::RtcFault) {
-      health = Health::RtcFault;
-      Serial.println(F("Fel: RTC svarar inte."));
-    }
+    health = Health::TimeNotSet;
     return;
   }
-
-  consecutiveRtcFailures = 0;
-  if (health == Health::RtcFault) {
-    health = Health::Ok;
-    Serial.println(F("RTC svarar igen."));
-  }
+  health = Health::Ok;
 
   // Medan servot parkerar vid uppstart eller slår manuellt väntar schemat.
   // Klockslaget tas då när servot är ledigt, så länge det är inom fönstret.
@@ -132,26 +118,8 @@ void setup() {
   striker.begin();
   scheduler.begin();
 
-  switch (timeKeeper.begin()) {
-    case TimeKeeper::Status::Ok:
-      break;
-
-    case TimeKeeper::Status::NotFound:
-      health = Health::RtcFault;
-      Serial.println(F("Fel: hittar ingen RTC. Kontrollera SDA/SCL och matning."));
-      break;
-
-    case TimeKeeper::Status::LostPower:
-      // Tiden i RTC:n är ogiltig. Använd tiden då programmet kompilerades
-      // som startvärde. Den ligger några sekunder efter, så ställ klockan
-      // exakt med kommandot "set" efteråt.
-      timeKeeper.setLocal(DateTime(F(__DATE__), F(__TIME__)));
-      Serial.println(F("Varning: RTC hade tappat strömmen. Tiden är satt till"));
-      Serial.println(F("kompileringstiden. Använd 'set' för att ställa exakt."));
-      break;
-  }
-
   console.begin();
+  Serial.println(F("Klockan är inte ställd. Använd 'set'."));
   console.update();
 
   // Watchdogen startar om kortet om loop() fastnar i mer än 2 sekunder.

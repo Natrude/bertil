@@ -54,10 +54,6 @@ void Console::execute(char* line) {
     handleStrike(line);
   } else if (strcmp(line, "schedule") == 0) {
     printSchedule();
-  } else if (strcmp(line, "temp") == 0) {
-    io_.print(F("RTC-temperatur: "));
-    io_.print(clock_.temperatureC(), 2);
-    io_.println(F(" C"));
   } else {
     io_.print(F("Okänt kommando: "));
     io_.println(line);
@@ -70,13 +66,12 @@ void Console::printHelp() {
   io_.println(F("  set YYYY-MM-DD hh:mm:ss  ställ klockan (lokal tid)"));
   io_.println(F("  strike [n]               slå n gånger nu"));
   io_.println(F("  schedule                 visa slagschemat"));
-  io_.println(F("  temp                     visa RTC-temperatur"));
 }
 
 void Console::printTime() {
   DateTime now;
   if (!clock_.readLocal(now)) {
-    io_.println(F("Fel: kunde inte läsa RTC."));
+    io_.println(F("Fel: klockan är inte ställd. Använd 'set'."));
     return;
   }
   printDateTime(io_, now);

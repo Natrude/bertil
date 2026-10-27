@@ -1,13 +1,13 @@
 # bertil
 
-SW for Arduino Uno R4 WiFi, using after market RTC.
+SW for Arduino Uno R4 WiFi.
 
-Arduino Uno R4 WiFi som slår på en klocka med ett SG90-servo vid bestämda klockslag. Tiden hålls av en Adafruit DS3231.
+Arduino Uno R4 WiFi som slår på en klocka med ett SG90-servo vid bestämda klockslag. Tiden hålls av kortets egen klocka.
 
 ## 1. Installera
 
 1. Installera **VS Code** och tillägget **PlatformIO IDE**.
-2. Öppna repots mapp (File → Open Folder). PlatformIO hämtar stödet för Uno R4 WiFi, Servo och RTClib automatiskt vid första bygget.
+2. Öppna repots mapp (File → Open Folder). PlatformIO hämtar stödet för Uno R4 WiFi, Servo och RTClib (för datumberäkningar) automatiskt vid första bygget.
 
 ## 2. Koppla in
 
@@ -16,10 +16,8 @@ Arduino Uno R4 WiFi som slår på en klocka med ett SG90-servo vid bestämda klo
 | Servo signal (orange) | D9          |
 | Servo + (röd)         | 5V          |
 | Servo GND (brun)      | GND         |
-| DS3231 VIN / GND      | 5V / GND    |
-| DS3231 SDA / SCL      | A4 / A5     |
 
-Sätt en 470 µF-kondensator mellan servots 5V och GND, med minusbenet mot GND. Sätt i ett CR1220-batteri i RTC-modulen så att tiden finns kvar utan ström.
+Sätt en 470 µF-kondensator mellan servots 5V och GND, med minusbenet mot GND.
 
 Montera inte slagarmen ännu. Servot åker till viloläget vid start och vinklarna är inte inställda.
 
@@ -32,7 +30,7 @@ pio run -t upload
 pio device monitor
 ```
 
-Konsolen skriver `Klockslagare redo. Skriv 'help' för kommandon.`
+Konsolen skriver `Klockslagare redo. Skriv 'help' för kommandon.` och `Klockan är inte ställd. Använd 'set'.`
 
 ## 4. Ställ klockan
 
@@ -41,7 +39,9 @@ set 2026-10-26 14:05:00
 time
 ```
 
-Ange svensk tid som den står på väggen. Sommartid sköts automatiskt och batteriet håller tiden när strömmen är borta. Första gången sätts tiden till när koden kompilerades, vilket är några sekunder fel, så använd `set` för att ställa exakt.
+Ange svensk tid som den står på väggen. Sommartid sköts automatiskt.
+
+Tiden finns bara i minnet. Efter varje omstart eller strömavbrott måste klockan ställas igen, och tills dess slår den inte enligt schemat.
 
 ## 5. Trimma slaget
 
@@ -77,7 +77,7 @@ Koppla in en 5V USB-laddare (minst 1 A). Kortet kör av sig självt utan dator.
 Lysdioden på kortet:
 
 - **Lugn blink:** allt fungerar.
-- **Snabb blink:** RTC:n svarar inte. Kontrollera SDA, SCL och matning.
+- **Snabb blink:** klockan är inte ställd. Använd `set`.
 
 ## Seriekommandon (115200 baud)
 
@@ -87,10 +87,9 @@ Lysdioden på kortet:
 | `set ÅÅÅÅ-MM-DD hh:mm:ss` | ställ klockan           |
 | `strike` / `strike 3`     | slå direkt              |
 | `schedule`                | visa schemat            |
-| `temp`                    | visa RTC-temperatur     |
 | `help`                    | lista kommandon         |
 
-Om kortet startar om när konsolen öppnas åker servot till viloläget. Det är normalt.
+Om kortet startar om när konsolen öppnas åker servot till viloläget och klockan måste ställas igen.
 
 ## Skisser
 

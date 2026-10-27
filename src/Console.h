@@ -19,7 +19,6 @@
  *   set ÅÅÅÅ-MM-DD hh:mm:ss       Ställ klockan (lokal tid)
  *   strike [n]                    Slå n gånger direkt (standard 1)
  *   schedule                      Visa slagschemat
- *   temp                          Visa temperaturen i RTC:n
  *
  * Läsningen är icke-blockerande: update() tar bara de tecken som redan
  * har kommit in och returnerar direkt.
