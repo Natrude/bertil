@@ -3,7 +3,7 @@
  * @brief Huvudprogram för klockslagaren.
  *
  * Hårdvara:
- *   - Arduino Uno R3
+ *   - Arduino Uno R4 WiFi
  *   - SG90-servo på pinne 9, matat med 5 V och gemensam jord
  *   - Adafruit DS3231 RTC på I2C (SDA = A4, SCL = A5)
  *
@@ -17,7 +17,7 @@
  *   Console      kommandon över serieporten
  */
 #include <Arduino.h>
-#include <avr/wdt.h>
+#include <WDT.h>
 
 #include "BellStriker.h"
 #include "Config.h"
@@ -125,10 +125,6 @@ void pollClock() {
 // ---------------------------------------------------------------------------
 
 void setup() {
-  // Om kortet startats om av watchdogen kan den fortfarande vara aktiv.
-  // Stäng av den medan uppstarten pågår.
-  wdt_disable();
-
   pinMode(config::kStatusLedPin, OUTPUT);
   Serial.begin(config::kSerialBaud);
 
@@ -159,11 +155,11 @@ void setup() {
   console.update();
 
   // Watchdogen startar om kortet om loop() fastnar i mer än 2 sekunder.
-  wdt_enable(WDTO_2S);
+  WDT.begin(2000);
 }
 
 void loop() {
-  wdt_reset();
+  WDT.refresh();
 
   console.update();
   striker.update();

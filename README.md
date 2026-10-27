@@ -1,13 +1,13 @@
 # bertil
 
-SW for Arduino Uno rev3, using after market RTC.
+SW for Arduino Uno R4 WiFi, using after market RTC.
 
-Arduino Uno R3 som slår på en klocka med ett SG90-servo vid bestämda klockslag. Tiden hålls av en Adafruit DS3231.
+Arduino Uno R4 WiFi som slår på en klocka med ett SG90-servo vid bestämda klockslag. Tiden hålls av en Adafruit DS3231.
 
 ## 1. Installera
 
 1. Installera **VS Code** och tillägget **PlatformIO IDE**.
-2. Öppna repots mapp (File → Open Folder). PlatformIO hämtar Servo och RTClib automatiskt vid första bygget.
+2. Öppna repots mapp (File → Open Folder). PlatformIO hämtar stödet för Uno R4 WiFi, Servo och RTClib automatiskt vid första bygget.
 
 ## 2. Koppla in
 
@@ -90,7 +90,7 @@ Lysdioden på kortet:
 | `temp`                    | visa RTC-temperatur     |
 | `help`                    | lista kommandon         |
 
-Kortet startar om när konsolen öppnas och servot åker då till viloläget. Det är normalt.
+Om kortet startar om när konsolen öppnas åker servot till viloläget. Det är normalt.
 
 ## Skisser
 
