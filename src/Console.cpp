@@ -8,8 +8,12 @@
 #include <string.h>
 
 Console::Console(Stream& io, TimeKeeper& clock, BellStriker& striker,
-                 const Scheduler& scheduler)
-    : io_(io), clock_(clock), striker_(striker), scheduler_(scheduler) {}
+                 const Scheduler& scheduler, WifiLink& wifi)
+    : io_(io),
+      clock_(clock),
+      striker_(striker),
+      scheduler_(scheduler),
+      wifi_(wifi) {}
 
 void Console::begin() {
   io_.println(F("Klockslagare redo. Skriv 'help' för kommandon."));
@@ -54,6 +58,8 @@ void Console::execute(char* line) {
     handleStrike(line);
   } else if (strcmp(line, "schedule") == 0) {
     printSchedule();
+  } else if (strcmp(line, "wifi") == 0) {
+    wifi_.printStatus(io_);
   } else {
     io_.print(F("Okänt kommando: "));
     io_.println(line);
@@ -66,6 +72,7 @@ void Console::printHelp() {
   io_.println(F("  set YYYY-MM-DD hh:mm:ss  ställ klockan (lokal tid)"));
   io_.println(F("  strike [n]               slå n gånger nu"));
   io_.println(F("  schedule                 visa slagschemat"));
+  io_.println(F("  wifi                     visa WiFi-läget"));
 }
 
 void Console::printTime() {

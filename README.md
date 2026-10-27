@@ -9,6 +9,12 @@ Arduino Uno R4 WiFi som slår på en klocka med ett SG90-servo vid bestämda klo
 1. Installera **VS Code** och tillägget **PlatformIO IDE**.
 2. Öppna repots mapp (File → Open Folder). PlatformIO hämtar stödet för Uno R4 WiFi, Servo och RTClib (för datumberäkningar) automatiskt vid första bygget.
 
+### WiFi-uppgifter
+
+Kopiera `include/Secrets.example.h` till `include/Secrets.h` och fyll i nätverkets namn och lösenord. `Secrets.h` checkas inte in. Utan den går det inte att bygga.
+
+Uno R4 WiFi klarar bara 2,4 GHz-nätverk.
+
 ## 2. Koppla in
 
 | Från                  | Till        |
@@ -30,7 +36,9 @@ pio run -t upload
 pio device monitor
 ```
 
-Konsolen skriver `Klockslagare redo. Skriv 'help' för kommandon.` och `Klockan är inte ställd. Använd 'set'.`
+Konsolen skriver `Klockslagare redo. Skriv 'help' för kommandon.` och `Klockan är inte ställd. Använd 'set'.` Efter några sekunder kommer `WiFi ansluten till ..., IP ...`.
+
+Kommer `WiFi: hittar inte nätverket` eller `anslutningen misslyckades`, kontrollera namn och lösenord i `include/Secrets.h`. Kortet försöker igen var 30:e sekund.
 
 ## 4. Ställ klockan
 
@@ -87,6 +95,7 @@ Lysdioden på kortet:
 | `set ÅÅÅÅ-MM-DD hh:mm:ss` | ställ klockan           |
 | `strike` / `strike 3`     | slå direkt              |
 | `schedule`                | visa schemat            |
+| `wifi`                    | visa WiFi-läget         |
 | `help`                    | lista kommandon         |
 
 Om kortet startar om när konsolen öppnas åker servot till viloläget och klockan måste ställas igen.

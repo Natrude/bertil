@@ -11,6 +11,7 @@
  * gånger per sekund och watchdogen kan matas hela tiden.
  *
  *   TimeKeeper   håller tiden och räknar om till lokal tid
+ *   WifiLink     håller kortet anslutet till WiFi
  *   Scheduler    avgör om klockan ska slå just nu
  *   BellStriker  rör servot
  *   Console      kommandon över serieporten
@@ -23,6 +24,13 @@
 #include "Console.h"
 #include "Scheduler.h"
 #include "TimeKeeper.h"
+#include "WifiLink.h"
+
+#if __has_include("Secrets.h")
+#include "Secrets.h"
+#else
+#error "include/Secrets.h saknas. Kopiera include/Secrets.example.h till include/Secrets.h och fyll i WiFi-uppgifterna."
+#endif
 
 namespace {
 
@@ -49,7 +57,14 @@ BellStriker striker(
 
 Scheduler scheduler(config::kSchedule, config::kScheduleSize);
 
-Console console(Serial, timeKeeper, striker, scheduler);
+WifiLink wifi(secrets::kWifiSsid, secrets::kWifiPassword,
+              WifiLink::Timing{
+                  config::kWifiPollMs,
+                  config::kWifiRetryMs,
+                  config::kModemTimeoutMs,
+              });
+
+Console console(Serial, timeKeeper, striker, scheduler, wifi);
 
 // ---------------------------------------------------------------------------
 // Systemstatus
@@ -120,10 +135,12 @@ void setup() {
 
   console.begin();
   Serial.println(F("Klockan är inte ställd. Använd 'set'."));
+
+  wifi.begin();
   console.update();
 
-  // Watchdogen startar om kortet om loop() fastnar i mer än 2 sekunder.
-  WDT.begin(2000);
+  // Watchdogen startar om kortet om loop() fastnar.
+  WDT.begin(config::kWatchdogMs);
 }
 
 void loop() {
@@ -131,6 +148,7 @@ void loop() {
 
   console.update();
   striker.update();
+  wifi.update();
 
   if (millis() - lastClockPollMs >= config::kClockPollMs) {
     lastClockPollMs = millis();

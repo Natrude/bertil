@@ -9,6 +9,7 @@
 #include "BellStriker.h"
 #include "Scheduler.h"
 #include "TimeKeeper.h"
+#include "WifiLink.h"
 
 /**
  * @brief Läser kommandon rad för rad från serieporten.
@@ -19,6 +20,7 @@
  *   set ÅÅÅÅ-MM-DD hh:mm:ss       Ställ klockan (lokal tid)
  *   strike [n]                    Slå n gånger direkt (standard 1)
  *   schedule                      Visa slagschemat
+ *   wifi                          Visa WiFi-läget
  *
  * Läsningen är icke-blockerande: update() tar bara de tecken som redan
  * har kommit in och returnerar direkt.
@@ -26,7 +28,7 @@
 class Console {
  public:
   Console(Stream& io, TimeKeeper& clock, BellStriker& striker,
-          const Scheduler& scheduler);
+          const Scheduler& scheduler, WifiLink& wifi);
 
   /// Skriver ut välkomsttext. Anropas en gång från setup().
   void begin();
@@ -49,6 +51,7 @@ class Console {
   TimeKeeper& clock_;
   BellStriker& striker_;
   const Scheduler& scheduler_;
+  WifiLink& wifi_;
 
   char line_[kLineCapacity];
   uint8_t length_ = 0;

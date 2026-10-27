@@ -68,6 +68,20 @@ constexpr bool kUseEuDst = true;
 constexpr uint16_t kClockPollMs = 200;
 
 // ---------------------------------------------------------------------------
+// WiFi
+// ---------------------------------------------------------------------------
+
+/// Hur ofta WiFi-läget läses av, i millisekunder.
+constexpr uint16_t kWifiPollMs = 1000;
+
+/// Väntetid mellan anslutningsförsök när kortet inte är anslutet.
+constexpr uint32_t kWifiRetryMs = 30000;
+
+/// Längsta väntan på svar från WiFi-modemet. Måste vara kortare än
+/// kWatchdogMs.
+constexpr uint16_t kModemTimeoutMs = 3000;
+
+// ---------------------------------------------------------------------------
 // Slagschema (lokal tid)
 // ---------------------------------------------------------------------------
 
@@ -86,5 +100,12 @@ constexpr size_t kScheduleSize = sizeof(kSchedule) / sizeof(kSchedule[0]);
 
 /// Hastighet på serieporten. Ska stämma med monitor_speed i platformio.ini.
 constexpr uint32_t kSerialBaud = 115200;
+
+/// Watchdogen startar om kortet om loop() fastnar längre än så här.
+/// Högst 5592 ms på Uno R4.
+constexpr uint32_t kWatchdogMs = 5000;
+
+static_assert(kModemTimeoutMs < kWatchdogMs,
+              "Modemets tidsgräns måste vara kortare än watchdogen.");
 
 }  // namespace config
