@@ -36,6 +36,18 @@ class TimeKeeper {
   /// Ställer klockan. Tiden anges i lokal tid och sparas som UTC.
   void setLocal(const DateTime& local);
 
+  /**
+   * @brief Ställer klockan med millisekundupplösning, t.ex. från NTP.
+   * @param unixSeconds UTC, hela sekunder sedan 1970.
+   * @param millisPart  Millisekunder in i den sekunden (0-999).
+   * @return Hur mycket klockan flyttades, i ms. Positivt om den gick efter.
+   *         0 om klockan inte var ställd innan.
+   */
+  int32_t setUtc(uint32_t unixSeconds, uint16_t millisPart);
+
+  /// true om klockan har ställts sedan start.
+  bool isSet() const { return isSet_; }
+
  private:
   /// Aktuell UTC-tid. Får bara anropas när klockan är ställd.
   DateTime nowUtc();

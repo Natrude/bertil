@@ -24,9 +24,29 @@ bool TimeKeeper::readLocal(DateTime& local) {
 }
 
 void TimeKeeper::setLocal(const DateTime& local) {
-  anchorUnix_ = localToUtc(local).unixtime();
-  anchorMs_ = millis();
+  setUtc(localToUtc(local).unixtime(), 0);
+}
+
+int32_t TimeKeeper::setUtc(uint32_t unixSeconds, uint16_t millisPart) {
+  const uint32_t nowMs = millis();
+
+  int32_t correctionMs = 0;
+  if (isSet_) {
+    const int64_t oldMs =
+        static_cast<int64_t>(anchorUnix_) * 1000 + (nowMs - anchorMs_);
+    const int64_t newMs = static_cast<int64_t>(unixSeconds) * 1000 + millisPart;
+    // Begränsa så att stora hopp (t.ex. fel år vid manuell ställning)
+    // inte slår runt.
+    const int64_t diffMs = newMs - oldMs;
+    correctionMs = static_cast<int32_t>(
+        diffMs > INT32_MAX ? INT32_MAX : (diffMs < INT32_MIN ? INT32_MIN : diffMs));
+  }
+
+  // Ankaret är det värde millis() hade när sekunden unixSeconds började.
+  anchorUnix_ = unixSeconds;
+  anchorMs_ = nowMs - millisPart;
   isSet_ = true;
+  return correctionMs;
 }
 
 DateTime TimeKeeper::nowUtc() {

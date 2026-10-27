@@ -82,6 +82,27 @@ constexpr uint32_t kWifiRetryMs = 30000;
 constexpr uint16_t kModemTimeoutMs = 3000;
 
 // ---------------------------------------------------------------------------
+// NTP
+// ---------------------------------------------------------------------------
+
+/// Server som klockan ställs från.
+constexpr char kNtpServer[] = "pool.ntp.org";
+
+/// Tid mellan synkar. Kortets klocka saknar kristall och kan gå flera
+/// sekunder fel per timme, så synken görs ofta.
+constexpr uint32_t kNtpSyncIntervalMs = 10UL * 60UL * 1000UL;
+
+/// Väntetid innan nytt försök när en synk misslyckats.
+constexpr uint32_t kNtpRetryMs = 30000;
+
+/// Hur länge ett svar från servern väntas på.
+constexpr uint16_t kNtpReplyTimeoutMs = 2000;
+
+/// Efter så lång tid utan lyckad synk räknas tiden som osäker
+/// (lysdioden dubbelblinkar).
+constexpr uint32_t kNtpStaleMs = 60UL * 60UL * 1000UL;
+
+// ---------------------------------------------------------------------------
 // Slagschema (lokal tid)
 // ---------------------------------------------------------------------------
 

@@ -7,6 +7,7 @@
 #include <Arduino.h>
 
 #include "BellStriker.h"
+#include "NtpSync.h"
 #include "Scheduler.h"
 #include "TimeKeeper.h"
 #include "WifiLink.h"
@@ -20,7 +21,8 @@
  *   set ÅÅÅÅ-MM-DD hh:mm:ss       Ställ klockan (lokal tid)
  *   strike [n]                    Slå n gånger direkt (standard 1)
  *   schedule                      Visa slagschemat
- *   wifi                          Visa WiFi-läget
+ *   wifi                          Visa WiFi- och NTP-läget
+ *   sync                          Hämta tiden från NTP nu
  *
  * Läsningen är icke-blockerande: update() tar bara de tecken som redan
  * har kommit in och returnerar direkt.
@@ -28,7 +30,7 @@
 class Console {
  public:
   Console(Stream& io, TimeKeeper& clock, BellStriker& striker,
-          const Scheduler& scheduler, WifiLink& wifi);
+          const Scheduler& scheduler, WifiLink& wifi, NtpSync& ntp);
 
   /// Skriver ut välkomsttext. Anropas en gång från setup().
   void begin();
@@ -43,6 +45,7 @@ class Console {
   void printSchedule();
   void handleSet(const char* line);
   void handleStrike(const char* line);
+  void handleSync();
 
   /// Längsta rad som tas emot, inklusive avslutande nolla.
   static constexpr uint8_t kLineCapacity = 40;
@@ -52,6 +55,7 @@ class Console {
   BellStriker& striker_;
   const Scheduler& scheduler_;
   WifiLink& wifi_;
+  NtpSync& ntp_;
 
   char line_[kLineCapacity];
   uint8_t length_ = 0;

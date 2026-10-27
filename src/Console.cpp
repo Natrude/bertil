@@ -8,12 +8,13 @@
 #include <string.h>
 
 Console::Console(Stream& io, TimeKeeper& clock, BellStriker& striker,
-                 const Scheduler& scheduler, WifiLink& wifi)
+                 const Scheduler& scheduler, WifiLink& wifi, NtpSync& ntp)
     : io_(io),
       clock_(clock),
       striker_(striker),
       scheduler_(scheduler),
-      wifi_(wifi) {}
+      wifi_(wifi),
+      ntp_(ntp) {}
 
 void Console::begin() {
   io_.println(F("Klockslagare redo. Skriv 'help' för kommandon."));
@@ -60,6 +61,9 @@ void Console::execute(char* line) {
     printSchedule();
   } else if (strcmp(line, "wifi") == 0) {
     wifi_.printStatus(io_);
+    ntp_.printStatus(io_);
+  } else if (strcmp(line, "sync") == 0) {
+    handleSync();
   } else {
     io_.print(F("Okänt kommando: "));
     io_.println(line);
@@ -72,7 +76,8 @@ void Console::printHelp() {
   io_.println(F("  set YYYY-MM-DD hh:mm:ss  ställ klockan (lokal tid)"));
   io_.println(F("  strike [n]               slå n gånger nu"));
   io_.println(F("  schedule                 visa slagschemat"));
-  io_.println(F("  wifi                     visa WiFi-läget"));
+  io_.println(F("  wifi                     visa WiFi- och NTP-läget"));
+  io_.println(F("  sync                     hämta tiden från NTP nu"));
 }
 
 void Console::printTime() {
@@ -118,6 +123,15 @@ void Console::handleSet(const char* line) {
   clock_.setLocal(local);
   io_.print(F("Klockan ställd: "));
   printTime();
+}
+
+void Console::handleSync() {
+  if (!wifi_.isConnected()) {
+    io_.println(F("Fel: WiFi är inte anslutet."));
+    return;
+  }
+  ntp_.requestSync();
+  io_.println(F("Synkar."));
 }
 
 void Console::handleStrike(const char* line) {

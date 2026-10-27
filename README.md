@@ -2,7 +2,7 @@
 
 SW for Arduino Uno R4 WiFi.
 
-Arduino Uno R4 WiFi som slår på en klocka med ett SG90-servo vid bestämda klockslag. Tiden hålls av kortets egen klocka.
+Arduino Uno R4 WiFi som slår på en klocka med ett SG90-servo vid bestämda klockslag. Tiden hämtas över WiFi från NTP.
 
 ## 1. Installera
 
@@ -36,20 +36,28 @@ pio run -t upload
 pio device monitor
 ```
 
-Konsolen skriver `Klockslagare redo. Skriv 'help' för kommandon.` och `Klockan är inte ställd. Använd 'set'.` Efter några sekunder kommer `WiFi ansluten till ..., IP ...`.
+Konsolen skriver `Klockslagare redo. Skriv 'help' för kommandon.` och `Väntar på tid från NTP.` Efter några sekunder kommer `WiFi ansluten till ..., IP ...` och sedan `NTP: <lokal tid>  rundtur ... ms`.
 
 Kommer `WiFi: hittar inte nätverket` eller `anslutningen misslyckades`, kontrollera namn och lösenord i `include/Secrets.h`. Kortet försöker igen var 30:e sekund.
 
-## 4. Ställ klockan
+## 4. Klockan
+
+Klockan ställs automatiskt från NTP (`pool.ntp.org`) så fort kortet kommit ut på nätet, och sedan var tionde minut. Kortets egen klocka saknar kristall och kan gå fel några sekunder i timmen, därför synkas den ofta. Sommartid sköts automatiskt.
+
+```
+time
+wifi
+```
+
+`wifi` visar när klockan senast synkades och hur mycket den då korrigerades. `sync` synkar direkt.
+
+Utan nätverk går det att ställa klockan för hand, med svensk tid som den står på väggen. Nästa lyckade NTP-synk skriver över den.
 
 ```
 set 2026-10-26 14:05:00
-time
 ```
 
-Ange svensk tid som den står på väggen. Sommartid sköts automatiskt.
-
-Tiden finns bara i minnet. Efter varje omstart eller strömavbrott måste klockan ställas igen, och tills dess slår den inte enligt schemat.
+Efter en omstart finns ingen tid förrän NTP svarat (eller `set` använts), och tills dess slår klockan inte enligt schemat.
 
 ## 5. Trimma slaget
 
@@ -85,7 +93,8 @@ Koppla in en 5V USB-laddare (minst 1 A). Kortet kör av sig självt utan dator.
 Lysdioden på kortet:
 
 - **Lugn blink:** allt fungerar.
-- **Snabb blink:** klockan är inte ställd. Använd `set`.
+- **Dubbelblink:** klockan går, men har inte kunnat synkas på över en timme. Kontrollera WiFi med `wifi`.
+- **Snabb blink:** klockan har ingen tid än. Vänta på NTP, eller använd `set`.
 
 ## Seriekommandon (115200 baud)
 
@@ -95,7 +104,8 @@ Lysdioden på kortet:
 | `set ÅÅÅÅ-MM-DD hh:mm:ss` | ställ klockan           |
 | `strike` / `strike 3`     | slå direkt              |
 | `schedule`                | visa schemat            |
-| `wifi`                    | visa WiFi-läget         |
+| `wifi`                    | visa WiFi och NTP       |
+| `sync`                    | synka klockan nu        |
 | `help`                    | lista kommandon         |
 
 Om kortet startar om när konsolen öppnas åker servot till viloläget och klockan måste ställas igen.

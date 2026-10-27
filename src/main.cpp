@@ -12,6 +12,7 @@
  *
  *   TimeKeeper   håller tiden och räknar om till lokal tid
  *   WifiLink     håller kortet anslutet till WiFi
+ *   NtpSync      ställer klockan från en NTP-server
  *   Scheduler    avgör om klockan ska slå just nu
  *   BellStriker  rör servot
  *   Console      kommandon över serieporten
@@ -22,6 +23,7 @@
 #include "BellStriker.h"
 #include "Config.h"
 #include "Console.h"
+#include "NtpSync.h"
 #include "Scheduler.h"
 #include "TimeKeeper.h"
 #include "WifiLink.h"
@@ -64,7 +66,15 @@ WifiLink wifi(secrets::kWifiSsid, secrets::kWifiPassword,
                   config::kModemTimeoutMs,
               });
 
-Console console(Serial, timeKeeper, striker, scheduler, wifi);
+NtpSync ntp(config::kNtpServer, timeKeeper, wifi,
+            NtpSync::Timing{
+                config::kNtpSyncIntervalMs,
+                config::kNtpRetryMs,
+                config::kNtpReplyTimeoutMs,
+                config::kNtpStaleMs,
+            });
+
+Console console(Serial, timeKeeper, striker, scheduler, wifi, ntp);
 
 // ---------------------------------------------------------------------------
 // Systemstatus
@@ -73,6 +83,8 @@ Console console(Serial, timeKeeper, striker, scheduler, wifi);
 /// Övergripande läge, visas med lysdioden.
 enum class Health : uint8_t {
   Ok,          ///< Allt fungerar. Lysdioden blinkar lugnt.
+  TimeStale,   ///< Tiden går, men har inte synkats på länge.
+               ///< Lysdioden dubbelblinkar.
   TimeNotSet,  ///< Klockan är inte ställd. Lysdioden blinkar snabbt.
 };
 
@@ -85,9 +97,28 @@ uint32_t lastClockPollMs = 0;
 
 /// Blinkar statuslysdioden utan att blockera.
 void updateStatusLed() {
-  // Lugn blink (1 Hz) när allt är bra, snabb blink (5 Hz) vid fel.
-  const uint16_t halfPeriodMs = (health == Health::Ok) ? 500 : 100;
-  const bool on = (millis() / halfPeriodMs) % 2 == 0;
+  const uint32_t now = millis();
+  bool on = false;
+
+  switch (health) {
+    case Health::Ok:
+      // Lugn blink, 1 Hz.
+      on = (now / 500) % 2 == 0;
+      break;
+
+    case Health::TimeStale: {
+      // Två korta blinkar per sekund.
+      const uint32_t phase = now % 1000;
+      on = phase < 100 || (phase >= 200 && phase < 300);
+      break;
+    }
+
+    case Health::TimeNotSet:
+      // Snabb blink, 5 Hz.
+      on = (now / 100) % 2 == 0;
+      break;
+  }
+
   digitalWrite(config::kStatusLedPin, on ? HIGH : LOW);
 }
 
@@ -99,7 +130,7 @@ void pollClock() {
     health = Health::TimeNotSet;
     return;
   }
-  health = Health::Ok;
+  health = ntp.isFresh() ? Health::Ok : Health::TimeStale;
 
   // Medan servot parkerar vid uppstart eller slår manuellt väntar schemat.
   // Klockslaget tas då när servot är ledigt, så länge det är inom fönstret.
@@ -134,7 +165,7 @@ void setup() {
   scheduler.begin();
 
   console.begin();
-  Serial.println(F("Klockan är inte ställd. Använd 'set'."));
+  Serial.println(F("Väntar på tid från NTP."));
 
   wifi.begin();
   console.update();
@@ -149,6 +180,7 @@ void loop() {
   console.update();
   striker.update();
   wifi.update();
+  ntp.update();
 
   if (millis() - lastClockPollMs >= config::kClockPollMs) {
     lastClockPollMs = millis();
