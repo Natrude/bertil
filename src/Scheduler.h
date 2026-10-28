@@ -44,6 +44,16 @@ class Scheduler {
    */
   uint8_t poll(const DateTime& local);
 
+  /**
+   * @brief Hittar nästa klockslag i schemat.
+   * @param local             Aktuell lokal tid.
+   * @param[out] entry        Nästa post.
+   * @param[out] secondsUntil Sekunder kvar till den. 0 om den är just nu.
+   * @return false om schemat är tomt.
+   */
+  bool next(const DateTime& local, StrikeTime& entry,
+            uint32_t& secondsUntil) const;
+
   size_t size() const { return count_; }
   const StrikeTime& entry(size_t index) const { return entries_[index]; }
 

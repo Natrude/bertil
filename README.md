@@ -7,7 +7,7 @@ Arduino Uno R4 WiFi som slår på en klocka med ett SG90-servo vid bestämda klo
 ## 1. Installera
 
 1. Installera **VS Code** och tillägget **PlatformIO IDE**.
-2. Öppna repots mapp (File → Open Folder). PlatformIO hämtar stödet för Uno R4 WiFi, Servo och RTClib (för datumberäkningar) automatiskt vid första bygget.
+2. Öppna repots mapp (File → Open Folder). PlatformIO hämtar stödet för Uno R4 WiFi, Servo, RTClib (för datumberäkningar) och hd44780 (skärmen) automatiskt vid första bygget.
 
 ### WiFi-uppgifter
 
@@ -22,6 +22,12 @@ Uno R4 WiFi klarar bara 2,4 GHz-nätverk.
 | Servo signal (orange) | D9          |
 | Servo + (röd)         | 5V          |
 | Servo GND (brun)      | GND         |
+| LCD1602 (I2C) VCC     | 5V          |
+| LCD1602 (I2C) GND     | GND         |
+| LCD1602 (I2C) SDA     | SDA (A4)    |
+| LCD1602 (I2C) SCL     | SCL (A5)    |
+
+Skärmen är en LCD1602 med I2C-adapter (PCF8574) på baksidan. Adressen hittas automatiskt. Syns ingenting, vrid på kontrastskruven på adaptern. Utan skärm skriver konsolen `Fel: hittar ingen skärm.` och resten fungerar som vanligt.
 
 Sätt en 470 µF-kondensator mellan servots 5V och GND, med minusbenet mot GND.
 
@@ -89,6 +95,8 @@ Tidszonen ställs med `kUtcOffsetHours` och `kUseEuDst` i samma fil.
 ## 7. Drift
 
 Koppla in en 5V USB-laddare (minst 1 A). Kortet kör av sig självt utan dator.
+
+Skärmen visar `Nästa slag hh:mm` och `om hh:mm:ss` till nästa klockslag, och `Slår nu!` medan det slår. Innan tiden är hämtad står `Väntar på tid från NTP`.
 
 Lysdioden på kortet:
 

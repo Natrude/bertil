@@ -53,3 +53,26 @@ uint8_t Scheduler::poll(const DateTime& local) {
   }
   return 0;
 }
+
+bool Scheduler::next(const DateTime& local, StrikeTime& entry,
+                     uint32_t& secondsUntil) const {
+  constexpr uint32_t kSecondsPerDay = 24UL * 60UL * 60UL;
+  const uint32_t nowSec = local.hour() * 3600UL + local.minute() * 60UL +
+                          local.second();
+
+  bool found = false;
+  for (size_t i = 0; i < count_; ++i) {
+    const uint32_t entrySec =
+        entries_[i].hour * 3600UL + entries_[i].minute * 60UL;
+    // Poster som redan passerat i dag räknas till samma tid i morgon.
+    // Dagar med sommartidsbyte är en timme kortare eller längre, vilket
+    // bara påverkar nedräkningen under natten till bytet.
+    const uint32_t until = (entrySec + kSecondsPerDay - nowSec) % kSecondsPerDay;
+    if (!found || until < secondsUntil) {
+      entry = entries_[i];
+      secondsUntil = until;
+      found = true;
+    }
+  }
+  return found;
+}

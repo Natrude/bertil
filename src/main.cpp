@@ -13,6 +13,7 @@
  *   TimeKeeper   håller tiden och räknar om till lokal tid
  *   WifiLink     håller kortet anslutet till WiFi
  *   NtpSync      ställer klockan från en NTP-server
+ *   Display      visar tid till nästa slag på en LCD1602
  *   Scheduler    avgör om klockan ska slå just nu
  *   BellStriker  rör servot
  *   Console      kommandon över serieporten
@@ -23,6 +24,7 @@
 #include "BellStriker.h"
 #include "Config.h"
 #include "Console.h"
+#include "Display.h"
 #include "NtpSync.h"
 #include "Scheduler.h"
 #include "TimeKeeper.h"
@@ -74,6 +76,8 @@ NtpSync ntp(config::kNtpServer, timeKeeper, wifi,
                 config::kNtpStaleMs,
             });
 
+Display display(scheduler);
+
 Console console(Serial, timeKeeper, striker, scheduler, wifi, ntp);
 
 // ---------------------------------------------------------------------------
@@ -122,6 +126,13 @@ void updateStatusLed() {
   digitalWrite(config::kStatusLedPin, on ? HIGH : LOW);
 }
 
+/// Visar aktuellt läge på skärmen.
+void updateDisplay() {
+  DateTime now;
+  const bool hasTime = timeKeeper.readLocal(now);
+  display.update(hasTime ? &now : nullptr, striker.isBusy());
+}
+
 /// Läser klockan, uppdaterar hälsoläget och startar slag enligt schemat.
 void pollClock() {
   DateTime now;
@@ -167,6 +178,8 @@ void setup() {
   console.begin();
   Serial.println(F("Väntar på tid från NTP."));
 
+  display.begin();
+  display.update(nullptr, false);
   wifi.begin();
   console.update();
 
@@ -185,6 +198,7 @@ void loop() {
   if (millis() - lastClockPollMs >= config::kClockPollMs) {
     lastClockPollMs = millis();
     pollClock();
+    updateDisplay();
   }
 
   updateStatusLed();
