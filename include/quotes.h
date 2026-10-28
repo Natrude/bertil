@@ -16,8 +16,8 @@
     {{"This show was brought to you by"},{"Advantek Group"}}
     {{"Teetsuuuuoooo!"},{"Kaaneeeedaaaa!"}}
     {{"NP is not in P!"},{"It's probably true"}}
-    {{"Internet enabled"},{"Neterint baleden"}}
-    {{"I know a bot"},{": Anna"}}
+    {{"Internet enabled"},{"Hacking in progress"}}
+    {{"I know a bot"},{"ROS2lib::Bot Anna"}}
     {{"BLOOD FOR THE BLOOD GOD"},{"SKULLS FOR THE SKULL THRONE"}}
     {{"Stockholmskontoret > Linköping"},{"Kom och gör något åt det!"}}
     {{"Kompetens, precision, oberoende"},{"Advantek Group"}}
@@ -34,4 +34,4 @@
 
     
 
-}
+};
