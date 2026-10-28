@@ -13,7 +13,7 @@
  *   TimeKeeper   håller tiden och räknar om till lokal tid
  *   WifiLink     håller kortet anslutet till WiFi
  *   NtpSync      ställer klockan från en NTP-server
- *   Display      visar tid till nästa slag på en LCD1602
+ *   Display      visar tid till nästa slag och citat på en LCD1602
  *   Scheduler    avgör om klockan ska slå just nu
  *   BellStriker  rör servot
  *   Console      kommandon över serieporten
@@ -29,6 +29,7 @@
 #include "Scheduler.h"
 #include "TimeKeeper.h"
 #include "WifiLink.h"
+#include "quotes.h"
 
 #if __has_include("Secrets.h")
 #include "Secrets.h"
@@ -76,7 +77,11 @@ NtpSync ntp(config::kNtpServer, timeKeeper, wifi,
                 config::kNtpStaleMs,
             });
 
-Display display(scheduler);
+Display display(scheduler, kQuotes, kQuoteCount,
+                Display::Timing{
+                    config::kCountdownSeconds,
+                    config::kQuotePartSeconds,
+                });
 
 Console console(Serial, timeKeeper, striker, scheduler, wifi, ntp);
 

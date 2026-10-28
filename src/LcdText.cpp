@@ -4,6 +4,8 @@
  */
 #include "LcdText.h"
 
+#include <string.h>
+
 namespace lcdtext {
 namespace {
 
@@ -98,6 +100,71 @@ size_t toLcd(const char* utf8, char* out, size_t cap) {
   }
   out[length] = '\0';
   return length;
+}
+
+uint8_t wrap(const char* lcdText, Line* lines, uint8_t maxLines) {
+  if (maxLines == 0) {
+    return 0;
+  }
+
+  // Fyll alla rader med mellanslag. Raderna skrivs sedan över tecken för
+  // tecken.
+  for (uint8_t i = 0; i < maxLines; ++i) {
+    memset(lines[i].text, ' ', kCols);
+    lines[i].text[kCols] = '\0';
+  }
+
+  uint8_t line = 0;  // Aktuell rad.
+  uint8_t col = 0;   // Antal tecken på aktuell rad.
+
+  const char* p = lcdText;
+  while (*p != '\0') {
+    // Hoppa över mellanslag mellan orden.
+    while (*p == ' ') {
+      ++p;
+    }
+    if (*p == '\0') {
+      break;
+    }
+
+    const char* word = p;
+    while (*p != '\0' && *p != ' ') {
+      ++p;
+    }
+    size_t length = p - word;
+
+    // Får ordet inte plats efter ett mellanslag på raden, börja på nästa.
+    // Ord som är längre än en hel rad delas ändå, så de börjar där de står
+    // om det finns plats för minst ett par tecken.
+    if (col > 0) {
+      const bool fits = col + 1 + length <= kCols;
+      const bool tooLongForAnyLine = length > kCols;
+      if (fits || (tooLongForAnyLine && col + 3 <= kCols)) {
+        ++col;  // Mellanslag före ordet.
+      } else {
+        ++line;
+        col = 0;
+      }
+    }
+
+    while (length > 0) {
+      if (line >= maxLines) {
+        return maxLines;
+      }
+      // Sista platsen på raden får ett bindestreck om ordet fortsätter
+      // på nästa rad.
+      if (col == kCols - 1 && length > 1) {
+        lines[line].text[col] = '-';
+        ++line;
+        col = 0;
+        continue;
+      }
+      lines[line].text[col++] = *word++;
+      --length;
+    }
+  }
+
+  return col == 0 && line == 0 ? 1 : line + 1;
 }
 
 }  // namespace lcdtext

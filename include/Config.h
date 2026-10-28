@@ -103,6 +103,20 @@ constexpr uint16_t kNtpReplyTimeoutMs = 2000;
 constexpr uint32_t kNtpStaleMs = 60UL * 60UL * 1000UL;
 
 // ---------------------------------------------------------------------------
+// Skärm
+// ---------------------------------------------------------------------------
+
+/// Sekunder i början av varje minut då tid till nästa slag visas.
+constexpr uint8_t kCountdownSeconds = 20;
+
+/// Sekunder per citatdel. Delarna visas växelvis två gånger var under
+/// resten av minuten. Citaten står i include/quotes.h.
+constexpr uint8_t kQuotePartSeconds = 10;
+
+static_assert(kCountdownSeconds + 4 * kQuotePartSeconds == 60,
+              "Skärmens cykel måste vara exakt en minut.");
+
+// ---------------------------------------------------------------------------
 // Slagschema (lokal tid)
 // ---------------------------------------------------------------------------
 

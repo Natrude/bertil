@@ -92,11 +92,33 @@ constexpr StrikeTime kSchedule[] = {
 
 Tidszonen ställs med `kUtcOffsetHours` och `kUseEuDst` i samma fil.
 
+### Citat på skärmen
+
+Citaten står i `include/quotes.h`. Varje citat har två delar:
+
+```cpp
+{"You will be okay", "You have no choice"},
+```
+
+Skärmen går i en cykel som börjar om varje hel minut:
+
+| Sekund | Visas                       |
+|--------|-----------------------------|
+| 00-19  | tid till nästa slag         |
+| 20-29  | citatets första del         |
+| 30-39  | citatets andra del          |
+| 40-49  | första delen igen           |
+| 50-59  | andra delen igen            |
+
+Nästa minut visas nästa citat i listan. Texten bryts automatiskt över två rader à 16 tecken. Blir en del längre än två rader bläddras den en rad i taget. Ord som är längre än 16 tecken delas med bindestreck. `å ä ö Å Ä Ö` fungerar, andra specialtecken visas som `?`. Ett `"` i texten skrivs som `\"`.
+
+Tiderna ställs med `kCountdownSeconds` och `kQuotePartSeconds` i `include/Config.h`.
+
 ## 7. Drift
 
 Koppla in en 5V USB-laddare (minst 1 A). Kortet kör av sig självt utan dator.
 
-Skärmen visar `Nästa slag hh:mm` och `om hh:mm:ss` till nästa klockslag, och `Slår nu!` medan det slår. Innan tiden är hämtad står `Väntar på tid från NTP`.
+Skärmen visar `Nästa slag hh:mm` och `om hh:mm:ss` till nästa klockslag i början av varje minut, och sedan citat (se avsnitt 6). Medan det slår står `Slår nu!`. Innan tiden är hämtad står `Väntar på tid från NTP` i stället för nedräkningen.
 
 Lysdioden på kortet:
 
