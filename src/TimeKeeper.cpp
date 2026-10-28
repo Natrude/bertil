@@ -4,79 +4,66 @@
  */
 #include "TimeKeeper.h"
 
-#include <Wire.h>
-
 namespace {
 
-/// Maxtid för en I2C-överföring. Utan gräns kan Wire hänga för alltid
-/// om en sladd glappar, och då startar watchdogen om hela kortet.
-constexpr uint32_t kWireTimeoutUs = 25000;
-
-/// Tider utanför detta intervall räknas som felaktiga avläsningar.
-constexpr uint16_t kMinValidYear = 2024;
-constexpr uint16_t kMaxValidYear = 2099;
+/// Hur länge ankaret får ligga innan det flyttas fram. Måste vara mycket
+/// kortare än de cirka 49 dagar det tar innan millis() slår runt.
+constexpr uint32_t kReanchorMs = 24UL * 60UL * 60UL * 1000UL;
 
 }  // namespace
 
 TimeKeeper::TimeKeeper(int8_t utcOffsetHours, bool useEuDst)
     : utcOffsetHours_(utcOffsetHours), useEuDst_(useEuDst) {}
 
-TimeKeeper::Status TimeKeeper::begin() {
-  // Timeouten sätts före rtc_.begin() så att även den första överföringen
-  // har en gräns. Wire.begin() nollställer den inte.
-#if defined(WIRE_HAS_TIMEOUT)
-  Wire.setWireTimeout(kWireTimeoutUs, true);
-#endif
-
-  // rtc_.begin() startar Wire och kontrollerar att kretsen svarar på
-  // sin I2C-adress (0x68).
-  if (!rtc_.begin()) {
-    return Status::NotFound;
-  }
-
-  // 32 kHz-utgången används inte. Stäng av den för att spara ström.
-  rtc_.disable32K();
-
-  // Flaggan sätts av kretsen om både matning och batteri har saknats.
-  // Då står klockan på ett gammalt värde och måste ställas.
-  if (rtc_.lostPower()) {
-    return Status::LostPower;
-  }
-
-  return Status::Ok;
-}
-
 bool TimeKeeper::readLocal(DateTime& local) {
-#if defined(WIRE_HAS_TIMEOUT)
-  Wire.clearWireTimeoutFlag();
-#endif
-
-  const DateTime utc = rtc_.now();
-
-#if defined(WIRE_HAS_TIMEOUT)
-  if (Wire.getWireTimeoutFlag()) {
+  if (!isSet_) {
     return false;
   }
-#endif
-
-  // Om modulen inte svarar läses ofta bara ettor (0xFF), vilket ger
-  // ogiltiga datum. Sådana avläsningar kastas.
-  if (!utc.isValid() || utc.year() < kMinValidYear ||
-      utc.year() > kMaxValidYear) {
-    return false;
-  }
-
-  local = utcToLocal(utc);
+  local = utcToLocal(nowUtc());
   return true;
 }
 
 void TimeKeeper::setLocal(const DateTime& local) {
-  // adjust() nollställer också lostPower-flaggan i kretsen.
-  rtc_.adjust(localToUtc(local));
+  setUtc(localToUtc(local).unixtime(), 0);
 }
 
-float TimeKeeper::temperatureC() {
-  return rtc_.getTemperature();
+int32_t TimeKeeper::setUtc(uint32_t unixSeconds, uint16_t millisPart) {
+  const uint32_t nowMs = millis();
+
+  int32_t correctionMs = 0;
+  if (isSet_) {
+    const int64_t oldMs =
+        static_cast<int64_t>(anchorUnix_) * 1000 + (nowMs - anchorMs_);
+    const int64_t newMs = static_cast<int64_t>(unixSeconds) * 1000 + millisPart;
+    // Begränsa så att stora hopp (t.ex. fel år vid manuell ställning)
+    // inte slår runt.
+    const int64_t diffMs = newMs - oldMs;
+    correctionMs = static_cast<int32_t>(
+        diffMs > INT32_MAX ? INT32_MAX : (diffMs < INT32_MIN ? INT32_MIN : diffMs));
+  }
+
+  // Ankaret är det värde millis() hade när sekunden unixSeconds började.
+  anchorUnix_ = unixSeconds;
+  anchorMs_ = nowMs - millisPart;
+  isSet_ = true;
+  return correctionMs;
+}
+
+DateTime TimeKeeper::nowUtc() {
+  // Subtraktionen av osignerade tal ger rätt svar även när millis() har
+  // slagit runt, så länge mindre än 49 dagar gått sedan ankaret.
+  uint32_t elapsedMs = millis() - anchorMs_;
+
+  // Flytta fram ankaret med hela sekunder då och då, så att avståndet
+  // till millis() aldrig blir så stort att det slår runt.
+  if (elapsedMs >= kReanchorMs) {
+    const uint32_t wholeSeconds = elapsedMs / 1000UL;
+    anchorUnix_ += wholeSeconds;
+    anchorMs_ += wholeSeconds * 1000UL;
+    elapsedMs -= wholeSeconds * 1000UL;
+  }
+
+  return DateTime(anchorUnix_ + elapsedMs / 1000UL);
 }
 
 DateTime TimeKeeper::utcToLocal(const DateTime& utc) const {

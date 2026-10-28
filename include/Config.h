@@ -64,11 +64,43 @@ constexpr int8_t kUtcOffsetHours = 1;
 /// true = följ EU:s regler för sommartid (sista söndagen i mars och oktober).
 constexpr bool kUseEuDst = true;
 
-/// Hur ofta RTC:n läses av, i millisekunder.
+/// Hur ofta klockan jämförs med schemat, i millisekunder.
 constexpr uint16_t kClockPollMs = 200;
 
-/// Antal misslyckade avläsningar i rad innan RTC:n räknas som trasig.
-constexpr uint8_t kRtcFaultThreshold = 10;
+// ---------------------------------------------------------------------------
+// WiFi
+// ---------------------------------------------------------------------------
+
+/// Hur ofta WiFi-läget läses av, i millisekunder.
+constexpr uint16_t kWifiPollMs = 1000;
+
+/// Väntetid mellan anslutningsförsök när kortet inte är anslutet.
+constexpr uint32_t kWifiRetryMs = 30000;
+
+/// Längsta väntan på svar från WiFi-modemet. Måste vara kortare än
+/// kWatchdogMs.
+constexpr uint16_t kModemTimeoutMs = 3000;
+
+// ---------------------------------------------------------------------------
+// NTP
+// ---------------------------------------------------------------------------
+
+/// Server som klockan ställs från.
+constexpr char kNtpServer[] = "pool.ntp.org";
+
+/// Tid mellan synkar. Kortets klocka saknar kristall och kan gå flera
+/// sekunder fel per timme, så synken görs ofta.
+constexpr uint32_t kNtpSyncIntervalMs = 10UL * 60UL * 1000UL;
+
+/// Väntetid innan nytt försök när en synk misslyckats.
+constexpr uint32_t kNtpRetryMs = 30000;
+
+/// Hur länge ett svar från servern väntas på.
+constexpr uint16_t kNtpReplyTimeoutMs = 2000;
+
+/// Efter så lång tid utan lyckad synk räknas tiden som osäker
+/// (lysdioden dubbelblinkar).
+constexpr uint32_t kNtpStaleMs = 60UL * 60UL * 1000UL;
 
 // ---------------------------------------------------------------------------
 // Slagschema (lokal tid)
@@ -89,5 +121,12 @@ constexpr size_t kScheduleSize = sizeof(kSchedule) / sizeof(kSchedule[0]);
 
 /// Hastighet på serieporten. Ska stämma med monitor_speed i platformio.ini.
 constexpr uint32_t kSerialBaud = 115200;
+
+/// Watchdogen startar om kortet om loop() fastnar längre än så här.
+/// Högst 5592 ms på Uno R4.
+constexpr uint32_t kWatchdogMs = 5000;
+
+static_assert(kModemTimeoutMs < kWatchdogMs,
+              "Modemets tidsgräns måste vara kortare än watchdogen.");
 
 }  // namespace config

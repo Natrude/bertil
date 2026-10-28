@@ -1,6 +1,7 @@
 /**
  * @file TimeKeeper.h
- * @brief Håller reda på tiden med en DS3231 och räknar om till lokal tid.
+ * @brief Håller reda på tiden med kortets egen klocka och räknar om till
+ *        lokal tid.
  */
 #pragma once
 
@@ -8,44 +9,49 @@
 #include <RTClib.h>
 
 /**
- * @brief Omslutning av DS3231-modulen.
+ * @brief Mjukvaruklocka byggd på millis().
  *
- * RTC:n lagrar alltid UTC. Lokal tid (inklusive sommartid) räknas fram
- * vid varje avläsning. Det gör att klockan byter till och från sommartid
- * av sig själv, utan att RTC:n behöver ställas om.
+ * Klockan lagrar UTC som en tidpunkt (ankaret) och det värde millis() hade
+ * då. Aktuell tid räknas fram från hur lång tid som gått sedan ankaret.
+ * Lokal tid (inklusive sommartid) räknas fram vid varje avläsning, så
+ * klockan byter till och från sommartid av sig själv.
+ *
+ * Tiden finns bara i minnet och måste ställas igen efter varje omstart.
  */
 class TimeKeeper {
  public:
-  /// Resultat från begin().
-  enum class Status : uint8_t {
-    Ok,         ///< RTC:n hittades och tiden är giltig.
-    NotFound,   ///< Ingen RTC svarar på I2C-bussen.
-    LostPower,  ///< RTC:n har tappat strömmen och tiden måste ställas.
-  };
-
   /**
    * @param utcOffsetHours Normaltidens avvikelse från UTC, t.ex. +1 för Sverige.
    * @param useEuDst       true om EU:s regler för sommartid ska användas.
    */
   TimeKeeper(int8_t utcOffsetHours, bool useEuDst);
 
-  /// Startar I2C och kontrollerar RTC:n. Anropas en gång från setup().
-  Status begin();
-
   /**
    * @brief Läser aktuell lokal tid.
-   * @param[out] local Lokal tid. Ändras bara om avläsningen lyckas.
-   * @return false om RTC:n inte svarar eller ger orimliga värden.
+   * @param[out] local Lokal tid. Ändras bara om klockan är ställd.
+   * @return false om klockan inte har ställts sedan start.
    */
   bool readLocal(DateTime& local);
 
-  /// Ställer klockan. Tiden anges i lokal tid och sparas som UTC i RTC:n.
+  /// Ställer klockan. Tiden anges i lokal tid och sparas som UTC.
   void setLocal(const DateTime& local);
 
-  /// Temperaturen i DS3231-kretsen i grader Celsius (bra för felsökning).
-  float temperatureC();
+  /**
+   * @brief Ställer klockan med millisekundupplösning, t.ex. från NTP.
+   * @param unixSeconds UTC, hela sekunder sedan 1970.
+   * @param millisPart  Millisekunder in i den sekunden (0-999).
+   * @return Hur mycket klockan flyttades, i ms. Positivt om den gick efter.
+   *         0 om klockan inte var ställd innan.
+   */
+  int32_t setUtc(uint32_t unixSeconds, uint16_t millisPart);
+
+  /// true om klockan har ställts sedan start.
+  bool isSet() const { return isSet_; }
 
  private:
+  /// Aktuell UTC-tid. Får bara anropas när klockan är ställd.
+  DateTime nowUtc();
+
   DateTime utcToLocal(const DateTime& utc) const;
   DateTime localToUtc(const DateTime& local) const;
 
@@ -55,9 +61,12 @@ class TimeKeeper {
   /// Datum för sista söndagen i en månad med 31 dagar.
   static uint8_t lastSundayOf(uint16_t year, uint8_t month);
 
-  RTC_DS3231 rtc_;
   const int8_t utcOffsetHours_;
   const bool useEuDst_;
+
+  bool isSet_ = false;
+  uint32_t anchorUnix_ = 0;  ///< UTC vid ankaret, sekunder sedan 1970.
+  uint32_t anchorMs_ = 0;    ///< millis() vid ankaret.
 };
 
 /// Skriver ut en tidpunkt som "ÅÅÅÅ-MM-DD hh:mm:ss".

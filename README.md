@@ -1,13 +1,19 @@
 # bertil
 
-SW for Arduino Uno rev3, using after market RTC.
+SW for Arduino Uno R4 WiFi.
 
-Arduino Uno R3 som slår på en klocka med ett SG90-servo vid bestämda klockslag. Tiden hålls av en Adafruit DS3231.
+Arduino Uno R4 WiFi som slår på en klocka med ett SG90-servo vid bestämda klockslag. Tiden hämtas över WiFi från NTP.
 
 ## 1. Installera
 
 1. Installera **VS Code** och tillägget **PlatformIO IDE**.
-2. Öppna repots mapp (File → Open Folder). PlatformIO hämtar Servo och RTClib automatiskt vid första bygget.
+2. Öppna repots mapp (File → Open Folder). PlatformIO hämtar stödet för Uno R4 WiFi, Servo och RTClib (för datumberäkningar) automatiskt vid första bygget.
+
+### WiFi-uppgifter
+
+Kopiera `include/Secrets.example.h` till `include/Secrets.h` och fyll i nätverkets namn och lösenord. `Secrets.h` checkas inte in. Utan den går det inte att bygga.
+
+Uno R4 WiFi klarar bara 2,4 GHz-nätverk.
 
 ## 2. Koppla in
 
@@ -16,10 +22,8 @@ Arduino Uno R3 som slår på en klocka med ett SG90-servo vid bestämda klocksla
 | Servo signal (orange) | D9          |
 | Servo + (röd)         | 5V          |
 | Servo GND (brun)      | GND         |
-| DS3231 VIN / GND      | 5V / GND    |
-| DS3231 SDA / SCL      | A4 / A5     |
 
-Sätt en 470 µF-kondensator mellan servots 5V och GND, med minusbenet mot GND. Sätt i ett CR1220-batteri i RTC-modulen så att tiden finns kvar utan ström.
+Sätt en 470 µF-kondensator mellan servots 5V och GND, med minusbenet mot GND.
 
 Montera inte slagarmen ännu. Servot åker till viloläget vid start och vinklarna är inte inställda.
 
@@ -32,16 +36,28 @@ pio run -t upload
 pio device monitor
 ```
 
-Konsolen skriver `Klockslagare redo. Skriv 'help' för kommandon.`
+Konsolen skriver `Klockslagare redo. Skriv 'help' för kommandon.` och `Väntar på tid från NTP.` Efter några sekunder kommer `WiFi ansluten till ..., IP ...` och sedan `NTP: <lokal tid>  rundtur ... ms`.
 
-## 4. Ställ klockan
+Kommer `WiFi: hittar inte nätverket` eller `anslutningen misslyckades`, kontrollera namn och lösenord i `include/Secrets.h`. Kortet försöker igen var 30:e sekund.
+
+## 4. Klockan
+
+Klockan ställs automatiskt från NTP (`pool.ntp.org`) så fort kortet kommit ut på nätet, och sedan var tionde minut. Kortets egen klocka saknar kristall och kan gå fel några sekunder i timmen, därför synkas den ofta. Sommartid sköts automatiskt.
+
+```
+time
+wifi
+```
+
+`wifi` visar när klockan senast synkades och hur mycket den då korrigerades. `sync` synkar direkt.
+
+Utan nätverk går det att ställa klockan för hand, med svensk tid som den står på väggen. Nästa lyckade NTP-synk skriver över den.
 
 ```
 set 2026-10-26 14:05:00
-time
 ```
 
-Ange svensk tid som den står på väggen. Sommartid sköts automatiskt och batteriet håller tiden när strömmen är borta. Första gången sätts tiden till när koden kompilerades, vilket är några sekunder fel, så använd `set` för att ställa exakt.
+Efter en omstart finns ingen tid förrän NTP svarat (eller `set` använts), och tills dess slår klockan inte enligt schemat.
 
 ## 5. Trimma slaget
 
@@ -77,7 +93,8 @@ Koppla in en 5V USB-laddare (minst 1 A). Kortet kör av sig självt utan dator.
 Lysdioden på kortet:
 
 - **Lugn blink:** allt fungerar.
-- **Snabb blink:** RTC:n svarar inte. Kontrollera SDA, SCL och matning.
+- **Dubbelblink:** klockan går, men har inte kunnat synkas på över en timme. Kontrollera WiFi med `wifi`.
+- **Snabb blink:** klockan har ingen tid än. Vänta på NTP, eller använd `set`.
 
 ## Seriekommandon (115200 baud)
 
@@ -87,10 +104,11 @@ Lysdioden på kortet:
 | `set ÅÅÅÅ-MM-DD hh:mm:ss` | ställ klockan           |
 | `strike` / `strike 3`     | slå direkt              |
 | `schedule`                | visa schemat            |
-| `temp`                    | visa RTC-temperatur     |
+| `wifi`                    | visa WiFi och NTP       |
+| `sync`                    | synka klockan nu        |
 | `help`                    | lista kommandon         |
 
-Kortet startar om när konsolen öppnas och servot åker då till viloläget. Det är normalt.
+Om kortet startar om när konsolen öppnas åker servot till viloläget och klockan måste ställas igen.
 
 ## Skisser
 
