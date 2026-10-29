@@ -88,6 +88,17 @@ constexpr StrikeTime kSchedule[] = {
 };
 ```
 
+Vilka veckodagar klockan slår styrs av `kStrikeDays` i samma fil. Som standard slår den måndag till fredag och är tyst på helgen:
+
+```cpp
+constexpr bool kStrikeDays[7] = {
+    false,  // sön
+    true,   // mån
+    ...
+    false,  // lör
+};
+```
+
 `schedule` i konsolen visar vad som ligger inne.
 
 Tidszonen ställs med `kUtcOffsetHours` och `kUseEuDst` i samma fil.

@@ -91,6 +91,19 @@ void Console::printTime() {
 }
 
 void Console::printSchedule() {
+  static const char* const kDayNames[7] = {"sön", "mån", "tis", "ons",
+                                           "tor", "fre", "lör"};
+  io_.print(F("  Dagar:"));
+  // Måndag först, söndag sist.
+  for (uint8_t i = 1; i <= 7; ++i) {
+    const uint8_t day = i % 7;
+    if (scheduler_.strikesOn(day)) {
+      io_.print(' ');
+      io_.print(kDayNames[day]);
+    }
+  }
+  io_.println();
+
   char buffer[24];
   for (size_t i = 0; i < scheduler_.size(); ++i) {
     const StrikeTime& e = scheduler_.entry(i);

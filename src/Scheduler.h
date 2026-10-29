@@ -20,6 +20,7 @@ struct StrikeTime {
  * poll() anropas regelbundet med lokal tid och returnerar antal slag
  * när ett schemalagt klockslag inträffar. Varje minut hanteras högst
  * en gång, så klockan slår inte flera gånger under samma minut.
+ * Klockan slår bara de veckodagar som är markerade i dagtabellen.
  * Senast slagna minut sparas i EEPROM och gäller även efter en omstart.
  */
 class Scheduler {
@@ -28,8 +29,10 @@ class Scheduler {
    * @param entries Pekare till schemat. Måste finnas kvar hela programmets
    *                livstid (i praktiken en konstant i Config.h).
    * @param count   Antal poster i schemat.
+   * @param days    Sju värden, ett per veckodag med söndag först, som anger
+   *                om klockan slår den dagen. Samma livstidskrav som entries.
    */
-  Scheduler(const StrikeTime* entries, size_t count);
+  Scheduler(const StrikeTime* entries, size_t count, const bool* days);
 
   /// Läser in senast slagna minut från EEPROM. Anropas en gång från setup().
   void begin();
@@ -49,7 +52,7 @@ class Scheduler {
    * @param local             Aktuell lokal tid.
    * @param[out] entry        Nästa post.
    * @param[out] secondsUntil Sekunder kvar till den. 0 om den är just nu.
-   * @return false om schemat är tomt.
+   * @return false om schemat är tomt eller ingen dag är markerad.
    */
   bool next(const DateTime& local, StrikeTime& entry,
             uint32_t& secondsUntil) const;
@@ -57,9 +60,13 @@ class Scheduler {
   size_t size() const { return count_; }
   const StrikeTime& entry(size_t index) const { return entries_[index]; }
 
+  /// true om klockan slår på veckodagen (0 = söndag ... 6 = lördag).
+  bool strikesOn(uint8_t dayOfWeek) const { return days_[dayOfWeek]; }
+
  private:
   const StrikeTime* const entries_;
   const size_t count_;
+  const bool* const days_;
 
   /// Senast hanterade minut, räknat som minuter sedan 1970.
   uint32_t lastHandledMinute_;

@@ -120,6 +120,17 @@ static_assert(kCountdownSeconds + 4 * kQuotePartSeconds == 60,
 // Slagschema (lokal tid)
 // ---------------------------------------------------------------------------
 
+/// Dagar då klockan slår, indexerat som DateTime::dayOfTheWeek().
+constexpr bool kStrikeDays[7] = {
+    false,  // sön
+    true,   // mån
+    true,   // tis
+    true,   // ons
+    true,   // tor
+    true,   // fre
+    false,  // lör
+};
+
 /// Klockslag då klockan ska slå. Format: { timme, minut, antal slag }.
 constexpr StrikeTime kSchedule[] = {
     {9, 30, 1},

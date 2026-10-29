@@ -60,7 +60,8 @@ BellStriker striker(
         config::kPauseMs,
     });
 
-Scheduler scheduler(config::kSchedule, config::kScheduleSize);
+Scheduler scheduler(config::kSchedule, config::kScheduleSize,
+                    config::kStrikeDays);
 
 WifiLink wifi(secrets::kWifiSsid, secrets::kWifiPassword,
               WifiLink::Timing{

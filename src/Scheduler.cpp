@@ -22,8 +22,12 @@ constexpr uint32_t kNoMinute = 0xFFFFFFFFUL;
 
 }  // namespace
 
-Scheduler::Scheduler(const StrikeTime* entries, size_t count)
-    : entries_(entries), count_(count), lastHandledMinute_(kNoMinute) {}
+Scheduler::Scheduler(const StrikeTime* entries, size_t count,
+                     const bool* days)
+    : entries_(entries),
+      count_(count),
+      days_(days),
+      lastHandledMinute_(kNoMinute) {}
 
 void Scheduler::begin() {
   // Om kortet startas om under en minut då klockan redan har slagit
@@ -44,6 +48,10 @@ uint8_t Scheduler::poll(const DateTime& local) {
   }
   lastHandledMinute_ = minuteKey;
 
+  if (!days_[local.dayOfTheWeek()]) {
+    return 0;
+  }
+
   for (size_t i = 0; i < count_; ++i) {
     if (entries_[i].hour == local.hour() &&
         entries_[i].minute == local.minute()) {
@@ -60,19 +68,31 @@ bool Scheduler::next(const DateTime& local, StrikeTime& entry,
   const uint32_t nowSec = local.hour() * 3600UL + local.minute() * 60UL +
                           local.second();
 
-  bool found = false;
-  for (size_t i = 0; i < count_; ++i) {
-    const uint32_t entrySec =
-        entries_[i].hour * 3600UL + entries_[i].minute * 60UL;
-    // Poster som redan passerat i dag räknas till samma tid i morgon.
-    // Dagar med sommartidsbyte är en timme kortare eller längre, vilket
-    // bara påverkar nedräkningen under natten till bytet.
-    const uint32_t until = (entrySec + kSecondsPerDay - nowSec) % kSecondsPerDay;
-    if (!found || until < secondsUntil) {
-      entry = entries_[i];
-      secondsUntil = until;
-      found = true;
+  // Dagarna gås igenom framåt och första dagen med ett kommande slag vinner.
+  // Dag 7 är samma veckodag som i dag och behövs när bara den dagen är
+  // markerad och dagens slag redan passerat. Dagar med sommartidsbyte är en
+  // timme kortare eller längre, vilket bara påverkar nedräkningen över bytet.
+  for (uint8_t day = 0; day <= 7; ++day) {
+    if (!days_[(local.dayOfTheWeek() + day) % 7]) {
+      continue;
+    }
+    bool found = false;
+    for (size_t i = 0; i < count_; ++i) {
+      const uint32_t entrySec =
+          entries_[i].hour * 3600UL + entries_[i].minute * 60UL;
+      if (day == 0 && entrySec < nowSec) {
+        continue;
+      }
+      const uint32_t until = day * kSecondsPerDay + entrySec - nowSec;
+      if (!found || until < secondsUntil) {
+        entry = entries_[i];
+        secondsUntil = until;
+        found = true;
+      }
+    }
+    if (found) {
+      return true;
     }
   }
-  return found;
+  return false;
 }
