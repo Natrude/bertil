@@ -22,12 +22,21 @@ Uno R4 WiFi klarar bara 2,4 GHz-nätverk.
 | Servo signal (orange) | D9          |
 | Servo + (röd)         | 5V          |
 | Servo GND (brun)      | GND         |
-| LCD1602 (I2C) VCC     | 5V          |
-| LCD1602 (I2C) GND     | GND         |
-| LCD1602 (I2C) SDA     | SDA (A4)    |
-| LCD1602 (I2C) SCL     | SCL (A5)    |
+| LCD 1 VSS             | GND         |
+| LCD 2 VDD             | 5V          |
+| LCD 3 V0 (kontrast)   | mittbenet på en 10 kΩ potentiometer, ytterbenen till 5V och GND |
+| LCD 4 RS              | D12         |
+| LCD 5 RW              | GND         |
+| LCD 6 E               | D11         |
+| LCD 7-10 D0-D3        | kopplas inte |
+| LCD 11 D4             | D5          |
+| LCD 12 D5             | D4          |
+| LCD 13 D6             | D3          |
+| LCD 14 D7             | D2          |
+| LCD 15 A (bakljus +)  | 5V via 220 Ω |
+| LCD 16 K (bakljus -)  | GND         |
 
-Skärmen är en LCD1602 med I2C-adapter (PCF8574) på baksidan. Adressen hittas automatiskt. Syns ingenting, vrid på kontrastskruven på adaptern. Utan skärm skriver konsolen `Fel: hittar ingen skärm.` och resten fungerar som vanligt.
+Skärmen är en LCD1602 utan I2C-adapter, kopplad i 4-bitarsläge så att bara 4 av de 8 datakablarna behövs. Syns ingenting, vrid på potentiometern. Står det bara svarta rutor på översta raden får skärmen ström men ingen data, kontrollera RS, E och D4-D7. Pinnarna ändras med `kLcd...Pin` i `include/Config.h`.
 
 Sätt en 470 µF-kondensator mellan servots 5V och GND, med minusbenet mot GND.
 

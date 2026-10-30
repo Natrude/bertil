@@ -4,17 +4,19 @@
  */
 #include "Display.h"
 
-Display::Display(const Scheduler& scheduler, const Quote* quotes,
-                 size_t quoteCount, const Timing& timing)
+Display::Display(const Pins& pins, const Scheduler& scheduler,
+                 const Quote* quotes, size_t quoteCount, const Timing& timing)
     : scheduler_(scheduler),
       quotes_(quotes),
       quoteCount_(quoteCount),
-      timing_(timing) {}
+      timing_(timing),
+      lcd_(pins.rs, pins.enable, pins.d4, pins.d5, pins.d6, pins.d7) {}
 
 void Display::begin() {
-  // begin() letar själv upp adapterns adress och hur den är kopplad.
+  // Utan R/W-pinne kan skärmen inte läsas av, så begin() märker inte om
+  // den saknas. Fel kommer bara om pinnarna är ogiltiga.
   if (lcd_.begin(lcdtext::kCols, lcdtext::kRows) != 0) {
-    Serial.println(F("Fel: hittar ingen skärm."));
+    Serial.println(F("Fel: kan inte starta skärmen."));
     return;
   }
   present_ = true;

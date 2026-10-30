@@ -5,6 +5,7 @@
  * Hårdvara:
  *   - Arduino Uno R4 WiFi
  *   - SG90-servo på pinne 9, matat med 5 V och gemensam jord
+ *   - LCD1602 i 4-bitarsläge på pinne 2-5, 11 och 12
  *
  * Programmet är uppbyggt av små moduler som var och en har en update()
  * som anropas från loop(). Ingen modul blockerar, så loop() varvar många
@@ -78,7 +79,15 @@ NtpSync ntp(config::kNtpServer, timeKeeper, wifi,
                 config::kNtpStaleMs,
             });
 
-Display display(scheduler, kQuotes, kQuoteCount,
+Display display(Display::Pins{
+                    config::kLcdRsPin,
+                    config::kLcdEnablePin,
+                    config::kLcdD4Pin,
+                    config::kLcdD5Pin,
+                    config::kLcdD6Pin,
+                    config::kLcdD7Pin,
+                },
+                scheduler, kQuotes, kQuoteCount,
                 Display::Timing{
                     config::kCountdownSeconds,
                     config::kQuotePartSeconds,

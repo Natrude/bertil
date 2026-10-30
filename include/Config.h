@@ -21,6 +21,15 @@ namespace config {
 /// Signalpinne till servot (orange sladd på SG90).
 constexpr uint8_t kServoPin = 9;
 
+/// Skärmens pinnar. Skärmen körs i 4-bitarsläge, så bara D4-D7 kopplas.
+/// R/W kopplas till GND.
+constexpr uint8_t kLcdRsPin = 12;
+constexpr uint8_t kLcdEnablePin = 11;
+constexpr uint8_t kLcdD4Pin = 5;
+constexpr uint8_t kLcdD5Pin = 4;
+constexpr uint8_t kLcdD6Pin = 3;
+constexpr uint8_t kLcdD7Pin = 2;
+
 /// Inbyggd lysdiod som används som statusindikator.
 constexpr uint8_t kStatusLedPin = LED_BUILTIN;
 
